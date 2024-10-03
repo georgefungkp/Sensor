@@ -1,18 +1,21 @@
 package org.george_fung.com;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-public class Main {
-    public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+import org.george_fung.com.util.LoadYamlIntoMap;
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
-            System.out.println();
-        }
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Map;
+
+
+public class Main {
+
+    public static void main(String[] args) throws URISyntaxException, IOException {
+        URL url  = LoadYamlIntoMap.class.getClassLoader().getResource("dev_config.yaml");
+        assert url != null;
+        File file = new File(url.toURI());
+        Map<String, Object> mapResult = LoadYamlIntoMap.getMap(file);
+
     }
 }

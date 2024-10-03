@@ -1,0 +1,11 @@
+sensors:
+  temperature:
+    udp_port: 3344
+    threshold: 35
+  humidity:
+    udp_port: 3355
+    threshold: 50
+
+
+central_service:
+  tcp_port: 3333
