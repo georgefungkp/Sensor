@@ -42,12 +42,11 @@ public class WarehouseService {
 
     /**
      * @param port
-     * @param threshold
-     * @param sensorType
      * @throws SocketException
      */
-    private void listenForSensorData(int port, int threshold, SensorType sensorType) throws SocketException {
+    private void listenForSensorData(int port) throws IOException {
         DatagramSocket socket = new DatagramSocket(port);
+//        this.stop();
 
         try (socket) {
             byte[] buffer = new byte[256];
@@ -56,12 +55,17 @@ public class WarehouseService {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String received = new String(packet.getData(), 0, packet.getLength());
+                received = received.replaceAll("[\\n\\r\\t]", "");
                 System.out.println("Received: " + received);
-                this.sendToCentralMonitoringService(received);
 
+                this.sendToCentralMonitoringService(received);
             }
-        } catch (Throwable e) {
+        }catch (SocketException _){
+            System.err.println("Central Monitoring Service is stopped unexpected");
+            this.stop();
+        }catch (Throwable e) {
             System.err.println(e.fillInStackTrace().toString());
+
         } // Auto close socket
     }
 
@@ -76,16 +80,7 @@ public class WarehouseService {
 
         // Receive response from the server
         String response = in.readLine();
-        System.out.println("Server says: " + response);
-    }
-
-    public static void main(String[] args) throws IOException {
-        WarehouseService service = new WarehouseService(args[0], "Warehouse One");
-        try {
-            service.start();
-        } catch (Exception ex) {
-            service.stop();
-        }
+        System.out.println("Central Monitoring Service response: " + response);
     }
 
 
@@ -103,48 +98,36 @@ public class WarehouseService {
 
 
     public void start() {
-        try {
             Thread tempThread = new Thread(() -> {
                 try {
-                    listenForSensorData((Integer) configMap.get("sensors.temperature.udp_port"),
-                            (Integer) configMap.get("sensors.temperature.threshold"), SensorType.TEMPERATURE);
-                } catch (SocketException e) {
+                    listenForSensorData((Integer) configMap.get("sensors.temperature.udp_port"));
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
             Thread humidityThread = new Thread(() -> {
                 try {
-                    listenForSensorData((Integer) configMap.get("sensors.humidity.udp_port"),
-                            (Integer) configMap.get("sensors.humidity.threshold"), SensorType.HUMIDITY);
-                } catch (SocketException e) {
+                    listenForSensorData((Integer) configMap.get("sensors.humidity.udp_port"));
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
 
             tempThread.start();
             humidityThread.start();
-        } catch (RuntimeException ex) {
-            System.err.println("System error:" + ex);
+    }
+
+    public static void main(String[] args) throws IOException {
+        WarehouseService service = new WarehouseService(args[0], "Warehouse One");
+        try {
+            service.start();
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+            System.err.println("System Error. Closing Warehouse Service");
+            service.stop();
         }
     }
 
-//        try {
-//            DatagramSocket socket = new DatagramSocket();
-//            String[] sensors = {
-//                "sensor_id=t1; value=30",
-//                "sensor_id=h1; value=40"
-//            };
-//
-//            for (String sensorData : sensors) {
-//                byte[] buffer = sensorData.getBytes();
-//                InetAddress address = InetAddress.getByName("localhost");
-//                int port = sensorData.contains("t1") ? 3344 : 3355;
-//                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
-//                socket.send(packet);
-//                System.out.println("Sent: " + sensorData);
-//            }
-//            socket.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+
 }

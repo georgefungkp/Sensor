@@ -10,10 +10,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
 
-public class CentralMonitoringService {
+public class CentralMonitoringService implements Service {
     private final Map<String, Object> configMap;
-    private int temperatureThreshold = Integer.MAX_VALUE;
-    private int humidityThreshold = Integer.MAX_VALUE;
+    ServerSocket serverSocket;
+    private final int temperatureThreshold;
+    private final int humidityThreshold;
 
     public CentralMonitoringService(String env) {
         this.configMap = Misc.getSettings(env);
@@ -22,75 +23,102 @@ public class CentralMonitoringService {
     }
 
     public static void main(String[] args) {
+        CentralMonitoringService service = new CentralMonitoringService(args[0]);
         try {
-            CentralMonitoringService service = new CentralMonitoringService(args[0]);
             service.start();
         } catch (Throwable e) {
             System.err.println(e.fillInStackTrace().toString());
+            System.err.println("System Error. Closing Central Monitoring Service");
+            service.stop();
         }
     }
 
     /**
-     *
      * @param message statistical information
      * @return return message to sensor
      */
     private String processSensorInfo(String message) {
+        message = message.replaceAll("[\\n\\r\\t]", "");
         String[] parts = message.split("; ");
         String sensorName = parts[0].split("=")[1];
         SensorType sensorType;
         int threshold;
         try {
             sensorType = SensorType.getSensorTypeByShortName(sensorName.substring(0, 1));
-        }catch (SensorType.SensorTypeNotFoundException ex){
-            System.err.println(ex);
+        } catch (SensorType.SensorTypeNotFoundException ex) {
+            System.err.println(ex.getMessage());
             return ex.getMessage();
         }
         if (sensorType == SensorType.TEMPERATURE) {
             threshold = this.temperatureThreshold;
-        }else{
+        } else {
             threshold = this.humidityThreshold;
         }
 
 
-        int value = 0;
+        int value;
         String valuePart = parts[1].split("=")[1];
         try {
-            value = Integer.parseInt(valuePart.replaceAll("[^A-Za-z0-9]", ""));
+            value = Integer.parseInt(valuePart);
         } catch (NumberFormatException nfe) {
-            System.err.printf("The format of value %s if not correct%n", valuePart);
+            System.err.printf("The format of reading %s is not correct%n", valuePart);
             return "Message Format Error";
         }
 
         if (value > threshold) {
-            String errMsg = String.format("ALARM: %s %s threshold exceeded! Value: %d", sensorType, sensorName, value);
+            String errMsg = String.format("ALARM: %s Sensor - %s threshold exceeded! Value: %d", sensorType, sensorName, value);
             System.err.println(errMsg);
             return errMsg;
-        }else{
+        } else {
             return String.format("Monitoring statistics of %s is well-received", sensorName);
         }
     }
 
-    public void start() throws IOException {
+    public void start() throws Exception {
         int portNo = (Integer) configMap.get("central_service.tcp_port");
-        ServerSocket serverSocket = new ServerSocket(portNo);
+        serverSocket = new ServerSocket(portNo);
         System.out.printf("Central Monitoring Services is running on port %d and waiting for client connection... %n", portNo);
-        // Accept incoming client connection
-        Socket clientSocket = serverSocket.accept();
-        System.out.println("Client connected!");
+        while (!serverSocket.isClosed()) {
+            // Accept incoming client connection
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Client connected!");
 
-        // Setup input and output streams for communication with the client
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-        // Read message from client
-        String message;
-        while ((message = in.readLine()) != null) {
-            System.out.println(message);
-            // Send response to the Warehouse
-            out.println(this.processSensorInfo(message));
+            // Setup input and output streams for communication with the client
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            // Read message from client
+            String message;
+            while (!clientSocket.isClosed()) {
+                while ((message = in.readLine()) != null) {
+                    System.out.println(message);
+                    // Send response to the Warehouse
+                    String result;
+                    try {
+                        result = this.processSensorInfo(message);
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException ex) {
+                        ex.printStackTrace();
+                        System.err.println(ex.getMessage());
+                        result = "Message Format Error";
+                    }
+                    out.println(result);
+                }
+            }
+//            } catch (SocketException _) {
+//                System.err.println("Warehouse Service is down. Close the connection");
+//            } finally {
+//                // Close the client socket
+//                clientSocket.close();
+//                serverSocket.close();
+//            }
         }
+    }
 
-        // Close the client socket
-        clientSocket.close();
+    @Override
+    public void stop() {
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
