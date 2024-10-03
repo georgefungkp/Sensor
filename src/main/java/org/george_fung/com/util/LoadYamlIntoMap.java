@@ -1,13 +1,11 @@
 package org.george_fung.com.util;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
@@ -62,15 +60,6 @@ public class LoadYamlIntoMap {
         return mapResult;
 
     }
-
-//    public static String convertYamlToJson(URL yaml) throws IOException {
-//        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-//        Object obj = yamlReader.readValue(yaml, Object.class);
-//
-//        ObjectMapper jsonWriter = new ObjectMapper();
-//        return jsonWriter.writeValueAsString(obj);
-//    }
-
 
     public static void main(String[] args) throws IOException, URISyntaxException {
        // URL resource = new LoadYamlIntoMap().getClass().getResource("myapp.yaml");
