@@ -1,12 +1,13 @@
 package org.george_fung.com;
 
 import org.george_fung.com.util.Misc;
+import org.george_fung.com.util.message_broker_service.BrokerMessageService;
 
-import java.io.BufferedReader;
+import javax.jms.JMSException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.util.Map;
 
 /**
@@ -15,33 +16,21 @@ import java.util.Map;
  * Client side should use the following tip to communicate with Ware house service
  * <a href="https://help.ubidots.com/en/articles/937233-sending-tcp-udp-packets-using-netcat#test-your-netcat-understanding-as-a-client-server">...</a>
  */
-public class WarehouseService {
+public class WarehouseService implements Service {
     private final Map<String, Object> configMap;
     String name;
-    Socket socket;
-    BufferedReader in;
-    PrintWriter out;
+    BrokerMessageService service;
 
-
-    public WarehouseService(String env, String name) throws IOException {
+    public WarehouseService(String env, String name) throws JMSException {
         this.configMap = Misc.getSettings(env);
         this.name = name;
-        int portNo = (Integer) configMap.get("central_service.tcp_port");
-        try {
-            this.socket = new Socket("localhost", portNo);
-        }catch (ConnectException _){
-            System.err.println("Central Monitoring Service is down");
-            return;
-        }
-        // Setup output stream to send data to the server
-        this.out = new PrintWriter(socket.getOutputStream(), true);
-        // Setup input stream to receive data from the server
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        System.out.println("Warehouse Service starts");
+        this.service = BrokerMessageService.getService(env);
+        System.out.println("Warehouse Service starts and is waiting monitoring statistics from sensors...");
     }
 
     /**
-     * @param port
+     * Listen data from sensors
+     * @param port listening port number
      * @throws SocketException
      */
     private void listenForSensorData(int port) throws IOException {
@@ -60,72 +49,67 @@ public class WarehouseService {
 
                 this.sendToCentralMonitoringService(received);
             }
-        }catch (SocketException _){
+        } catch (SocketException _) {
             System.err.println("Central Monitoring Service is stopped unexpected");
-            this.stop();
-        }catch (Throwable e) {
+            this.stopService();
+        } catch (Throwable e) {
             System.err.println(e.fillInStackTrace().toString());
 
         } // Auto close socket
     }
 
     /**
-     *
+     * Send the message to message broker
      * @param message
-     * @throws IOException
+     * @throws JMSException
      */
-    private void sendToCentralMonitoringService(String message) throws IOException {
+    private void sendToCentralMonitoringService(String message) throws JMSException {
         // Send message to the server
-        out.println(message);
-
-        // Receive response from the server
-        String response = in.readLine();
-        System.out.println("Central Monitoring Service response: " + response);
+        service.put(message);
     }
 
 
     /**
-     * Close the socket, reader and writer
-     *
-     * @throws IOException
+     * For action of stoppage of service before program ends
      */
-    public void stop() throws IOException {
-        this.out.close();
-        this.in.close();
-        this.socket.close();
+    @Override
+    public void stopService() {
         System.out.println("Warehouse Service is closed");
     }
 
+    /**
+     * Create threads to wait data from UDP port
+     * One thread for one type of sensor.
+     */
+    @Override
+    public void startService() {
+        Thread tempThread = new Thread(() -> {
+            try {
+                listenForSensorData((Integer) configMap.get("sensors.temperature.udp_port"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        Thread humidityThread = new Thread(() -> {
+            try {
+                listenForSensorData((Integer) configMap.get("sensors.humidity.udp_port"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
-    public void start() {
-            Thread tempThread = new Thread(() -> {
-                try {
-                    listenForSensorData((Integer) configMap.get("sensors.temperature.udp_port"));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            Thread humidityThread = new Thread(() -> {
-                try {
-                    listenForSensorData((Integer) configMap.get("sensors.humidity.udp_port"));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-
-            tempThread.start();
-            humidityThread.start();
+        tempThread.start();
+        humidityThread.start();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, JMSException {
         WarehouseService service = new WarehouseService(args[0], "Warehouse One");
         try {
-            service.start();
-
+            service.startService();
         } catch (Throwable e) {
             e.printStackTrace();
             System.err.println("System Error. Closing Warehouse Service");
-            service.stop();
+            service.stopService();
         }
     }
 

@@ -8,7 +8,7 @@ sensors:
 
 active_mq:
   port: 61616
-  queue: monitoring
+  queue: testing
 
 #central_service:
 #  by: mq

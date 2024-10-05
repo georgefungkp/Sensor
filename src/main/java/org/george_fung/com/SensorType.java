@@ -21,8 +21,8 @@ public enum SensorType{
     }
 
     public static class SensorTypeNotFoundException extends Exception{
-        public SensorTypeNotFoundException(String messsage){
-            super(messsage);
+        public SensorTypeNotFoundException(String message){
+            super(message);
         }
     }
 }

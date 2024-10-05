@@ -17,7 +17,7 @@ public class LoadYamlIntoMap {
     static ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
 
-    private static void flattenedYaml(Map<String, Object> inputMap,  Map<String, Object> resultMap, String parentKey){
+    static void flattenedYaml(Map<String, Object> inputMap, Map<String, Object> resultMap, String parentKey){
         //recursion exit conditon
         if (inputMap == null || inputMap.isEmpty()){
            return;

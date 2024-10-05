@@ -1,6 +1,14 @@
 package org.george_fung.com;
 
 public interface Service {
-    void start() throws Exception;
-    void stop();
+    /**
+     * Start-up service
+     * @throws Exception
+     */
+    void startService() throws Exception;
+
+    /**
+     * End of service
+     */
+    void stopService();
 }
