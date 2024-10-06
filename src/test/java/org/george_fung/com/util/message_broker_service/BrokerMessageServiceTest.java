@@ -54,19 +54,6 @@ public class BrokerMessageServiceTest {
         }, "Check if put does not throw an exception");
     }
 
-    @Disabled
-    @Test
-    public void testGetAsync() throws JMSException {
-        messageService.put("Async Message");
-
-        MessageHandler mockHandler = mock(MessageHandler.class);
-        // Run async method
-        messageService.getAsync(mockHandler);
-
-
-    }
-
-
     /**
      * Given that the run method in the Runnable interface requires no parameters and returns void,
      * any lambda expression of the form () -> { statements } conforms to the Runnable interface

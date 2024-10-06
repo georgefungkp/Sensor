@@ -11,8 +11,6 @@ import java.net.SocketException;
 import java.util.Map;
 
 /**
- * @Todo 1. add comment of each class
- * @Todo 2. log4j
  * Client side should use the following tip to communicate with Ware house service
  * <a href="https://help.ubidots.com/en/articles/937233-sending-tcp-udp-packets-using-netcat#test-your-netcat-understanding-as-a-client-server">...</a>
  */
@@ -35,11 +33,9 @@ public class WarehouseService implements Service {
      */
     void listenForSensorData(int port) throws IOException {
         DatagramSocket socket = new DatagramSocket(port);
-//        this.stop();
 
         try (socket) {
             byte[] buffer = new byte[256];
-
             do {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);

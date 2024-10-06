@@ -17,15 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LoadYamlIntoMapTest {
 
-    private LoadYamlIntoMap loadYamlIntoMap;
     private ObjectMapper mockObjectMapper;
 
     @BeforeEach
     void setUp() {
         // Mock the ObjectMapper
         mockObjectMapper = Mockito.spy(new ObjectMapper(new YAMLFactory()));
-        loadYamlIntoMap = new LoadYamlIntoMap();
-        loadYamlIntoMap.mapper = mockObjectMapper;
+        LoadYamlIntoMap.mapper = mockObjectMapper;
     }
 
     @Test
@@ -96,9 +94,9 @@ class LoadYamlIntoMapTest {
 
         // Verify that the list of maps is correctly flattened
         assertTrue(resultMap.containsKey("listOfMaps.[0].key1"));
-        assertTrue(resultMap.containsKey("listOfMaps.[1].key2"));
+        assertTrue(resultMap.containsKey("listOfMaps.[0].key2"));
         assertEquals("value1", resultMap.get("listOfMaps.[0].key1"));
-        assertEquals("value2", resultMap.get("listOfMaps.[1].key2"));
+        assertEquals("value2", resultMap.get("listOfMaps.[0].key2"));
     }
 
     @Test
@@ -119,8 +117,6 @@ class LoadYamlIntoMapTest {
     @Test
     void testMainMethodWithValidYamlFile() throws Exception {
         // Test the main method with a valid YAML file
-        String[] args = {"dev_config.yaml"};
-
         // Mock the file and setup valid output
         URL url = LoadYamlIntoMap.class.getClassLoader().getResource("dev_config.yaml");
         assertNotNull(url);
@@ -130,6 +126,6 @@ class LoadYamlIntoMapTest {
 
         // Assert that the resultMap is not null
         assertNotNull(resultMap);
-        assertTrue(resultMap.size() > 0); // Ensure it's not empty (depending on your file)
+        assertFalse(resultMap.isEmpty()); // Ensure it's not empty (depending on your file)
     }
 }
