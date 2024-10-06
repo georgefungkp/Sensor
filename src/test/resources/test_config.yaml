@@ -1,10 +1,10 @@
 sensors:
   temperature:
     udp_port: 3344
-    threshold: 35
+    threshold: 0
   humidity:
     udp_port: 3355
-    threshold: 50
+    threshold: 0
 
 active_mq:
   port: 61616

@@ -33,14 +33,14 @@ public class WarehouseService implements Service {
      * @param port listening port number
      * @throws SocketException
      */
-    private void listenForSensorData(int port) throws IOException {
+    void listenForSensorData(int port) throws IOException {
         DatagramSocket socket = new DatagramSocket(port);
 //        this.stop();
 
         try (socket) {
             byte[] buffer = new byte[256];
 
-            while (true) {
+            do {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String received = new String(packet.getData(), 0, packet.getLength());
@@ -48,7 +48,7 @@ public class WarehouseService implements Service {
                 System.out.println("Received: " + received);
 
                 this.sendToCentralMonitoringService(received);
-            }
+            } while (true);
         } catch (SocketException _) {
             System.err.println("Central Monitoring Service is stopped unexpected");
             this.stopService();
@@ -102,12 +102,11 @@ public class WarehouseService implements Service {
         humidityThread.start();
     }
 
-    public static void main(String[] args) throws IOException, JMSException {
+    public static void main(String[] args) throws JMSException {
         WarehouseService service = new WarehouseService(args[0], "Warehouse One");
         try {
             service.startService();
         } catch (Throwable e) {
-            e.printStackTrace();
             System.err.println("System Error. Closing Warehouse Service");
             service.stopService();
         }

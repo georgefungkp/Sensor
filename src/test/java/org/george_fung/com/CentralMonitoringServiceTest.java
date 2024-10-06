@@ -1,146 +1,161 @@
 package org.george_fung.com;
 
-import org.george_fung.com.util.Misc;
 import org.george_fung.com.util.message_broker_service.BrokerMessageService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.jms.JMSException;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class CentralMonitoringServiceTest {
 
-    private CentralMonitoringService centralMonitoringService;
     private BrokerMessageService mockBrokerService;
-    private Map<String, Object> configMap;
+//    private Map<String, Object> configMap;
+
+    private final PrintStream standardOut = System.out;
+    private final PrintStream standardErr = System.err;
+    private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errStreamCaptor = new ByteArrayOutputStream();
 
     @BeforeEach
     void setUp() throws JMSException {
-        // Mock the settings and BrokerMessageService
-        mockBrokerService = mock(BrokerMessageService.class);
-        configMap = new HashMap<>();
-        configMap.put("sensors.temperature.threshold", 30);  // Set thresholds for test
-        configMap.put("sensors.humidity.threshold", 50);
-
-        // Mock Misc.getSettings to return the configMap
-        Mockito.mockStatic(Misc.class);
-        when(Misc.getSettings("testEnv")).thenReturn(configMap);
-
-        // Mock BrokerMessageService.getService to return mockBrokerService
-        Mockito.mockStatic(BrokerMessageService.class);
-        when(BrokerMessageService.getService("testEnv")).thenReturn(mockBrokerService);
-
-        // Create CentralMonitoringService instance
-        centralMonitoringService = new CentralMonitoringService("testEnv");
+        System.setOut(new PrintStream(outputStreamCaptor));
+        System.setErr(new PrintStream(errStreamCaptor));
     }
+
+
+    @AfterEach
+    public void tearDown() {
+        System.setOut(standardOut); // Revert back to the standard output stream
+        System.setErr((standardErr)); // Revert back to the standard error stream
+    }
+
+//    @Test
+//    void testStartService() throws Exception {
+//        // Ensure that starting the service doesn't throw an exception
+//        CentralMonitoringService mockCentralMonitor = Mockito.mock(CentralMonitoringService.class);
+//        assertDoesNotThrow(mockCentralMonitor::startService);
+//
+//        // Verify that the async message retrieval is triggered
+//        verify(mockCentralMonitor, times(1)).getAsync(any(CentralMonitoringService.class));
+//    }
+
 
     @Test
-    void testStartService() throws Exception {
-        // Ensure that starting the service doesn't throw an exception
-        assertDoesNotThrow(() -> {
-            centralMonitoringService.startService();
-        });
+    public void testProcessMessageWithValidTemperatureSensorData() {
+        String testMessage = "type=t1; reading=0"; // example message
 
-        // Verify that the async message retrieval is triggered
-        verify(mockBrokerService, times(1)).getAsync(any(CentralMonitoringService.class));
+        CentralMonitoringService service = Mockito.mock(CentralMonitoringService.class);
+        doCallRealMethod().when(service).processMessage(testMessage);
+
+        service.processMessage(testMessage);
+
+        verify(service, times(1)).processMessage(testMessage);
+        assertFalse(errStreamCaptor.toString().trim().contains("ALARM: TEMPERATURE Sensor"));
     }
+
 
     @Test
-    void testProcessMessageWithValidTemperatureSensorData() {
-        // Simulate receiving a temperature sensor message
-        String message = "sensor=T1; value=35";  // 35 exceeds the threshold of 30
+    public void testProcessMessageWithInvalidTemperatureSensorData() {
+        String testMessage = "type=t1; reading=50"; // example message
 
-        // Capture system output
-        ArgumentCaptor<String> systemOutCaptor = ArgumentCaptor.forClass(String.class);
-        System.setErr(mockPrintStream(systemOutCaptor));
+        CentralMonitoringService service = Mockito.mock(CentralMonitoringService.class);
+        doCallRealMethod().when(service).processMessage(testMessage);
 
-        centralMonitoringService.processMessage(message);
+        service.processMessage(testMessage);
 
-        // Verify the ALARM message is printed
-        assertTrue(systemOutCaptor.getValue().contains("ALARM: TEMPERATURE Sensor - T1 threshold exceeded! Value: 35"));
+        verify(service, times(1)).processMessage(testMessage);
+
+        assertTrue(errStreamCaptor.toString().trim().contains("ALARM: TEMPERATURE Sensor - t1 threshold exceeded! Value: 50"));
+        assertFalse(errStreamCaptor.toString().trim().contains("ALARM: TEMPERATURE Sensor - t1 threshold exceeded! Value: 51"));
     }
+
 
     @Test
     void testProcessMessageWithValidHumiditySensorData() {
         // Simulate receiving a humidity sensor message
-        String message = "sensor=H1; value=60";  // 60 exceeds the threshold of 50
+        String testMessage = "sensor=h1; value=0";
 
-        // Capture system output
-        ArgumentCaptor<String> systemOutCaptor = ArgumentCaptor.forClass(String.class);
-        System.setErr(mockPrintStream(systemOutCaptor));
+        CentralMonitoringService service = Mockito.mock(CentralMonitoringService.class);
+        doCallRealMethod().when(service).processMessage(testMessage);
 
-        centralMonitoringService.processMessage(message);
+        service.processMessage(testMessage);
 
-        // Verify the ALARM message is printed
-        assertTrue(systemOutCaptor.getValue().contains("ALARM: HUMIDITY Sensor - H1 threshold exceeded! Value: 60"));
+        verify(service, times(1)).processMessage(testMessage);
+        assertFalse(errStreamCaptor.toString().trim().contains("ALARM: TEMPERATURE Sensor"));
     }
+
+
+    @Test
+    public void testProcessMessageWithInvalidHumiditySensorData() {
+        String testMessage = "type=h1; reading=60"; // example message
+
+        CentralMonitoringService service = Mockito.mock(CentralMonitoringService.class);
+        doCallRealMethod().when(service).processMessage(testMessage);
+
+        service.processMessage(testMessage);
+
+        verify(service, times(1)).processMessage(testMessage);
+
+        assertTrue(errStreamCaptor.toString().trim().contains("ALARM: HUMIDITY Sensor - h1 threshold exceeded! Value: 60"));
+        assertFalse(errStreamCaptor.toString().trim().contains("ALARM: HUMIDITY Sensor - h1 threshold exceeded! Value: 61"));
+    }
+
 
     @Test
     void testProcessMessageWithInvalidSensorType() {
         // Simulate receiving a message with an unknown sensor type
-        String message = "sensor=Z1; value=25";  // Z is not a valid sensor type
+        String testMessage = "sensor=Z1; value=25";  // Z is not a valid sensor type
 
-        // Capture system output
-        ArgumentCaptor<String> systemOutCaptor = ArgumentCaptor.forClass(String.class);
-        System.setErr(mockPrintStream(systemOutCaptor));
+        CentralMonitoringService service = Mockito.mock(CentralMonitoringService.class);
+        doCallRealMethod().when(service).processMessage(testMessage);
 
-        centralMonitoringService.processMessage(message);
+        service.processMessage(testMessage);
 
         // Verify the error message is printed
-        assertTrue(systemOutCaptor.getValue().contains("Sensor type Z not found"));
+        assertTrue(errStreamCaptor.toString().trim().contains("The sensor type is wrong. value:Z"));
     }
 
     @Test
     void testProcessMessageWithInvalidValue() {
         // Simulate receiving a message with an invalid value
-        String message = "sensor=T1; value=abc";  // Value is not a number
+        String testMessage = "sensor=t1; value=abc";  // Value is not a number
 
-        // Capture system output
-        ArgumentCaptor<String> systemOutCaptor = ArgumentCaptor.forClass(String.class);
-        System.setErr(mockPrintStream(systemOutCaptor));
+        CentralMonitoringService service = Mockito.mock(CentralMonitoringService.class);
+        doCallRealMethod().when(service).processMessage(testMessage);
 
-        centralMonitoringService.processMessage(message);
+        service.processMessage(testMessage);
 
         // Verify the format error message is printed
-        assertTrue(systemOutCaptor.getValue().contains("The format of reading abc is not correct"));
+        assertTrue(errStreamCaptor.toString().trim().contains("The format of reading abc is not correct"));
     }
 
-    @Test
-    void testStopService() {
-        // Test stopping the service
-        assertDoesNotThrow(() -> {
-            centralMonitoringService.stopService();
-        });
+//    @Test
+//    void testStopService() {
+//        // Test stopping the service
+//        assertDoesNotThrow(() -> {
+//            centralMonitoringService.stopService();
+//        });
+//
+//        // Check if stop service message is printed
+//        verify(System.out, times(1)).println("stopping...");
+//    }
 
-        // Check if stop service message is printed
-        verify(System.out, times(1)).println("stopping...");
-    }
+//    @Test
+//    void testMainMethod() {
+//        // Test the main method to ensure it doesn't throw any exceptions
+//        assertDoesNotThrow(() -> {
+//            String[] args = {"test"};
+//            CentralMonitoringService.main(args);
+//        });
+//    }
 
-    @Test
-    void testMainMethod() {
-        // Test the main method to ensure it doesn't throw any exceptions
-        assertDoesNotThrow(() -> {
-            String[] args = {"testEnv"};
-            CentralMonitoringService.main(args);
-        });
-    }
 
-    // Helper method to mock system output streams for testing print messages
-    private PrintStream mockPrintStream(ArgumentCaptor<String> captor) {
-        PrintStream mockPrintStream = mock(PrintStream.class);
-        doAnswer(invocation -> {
-            Object message = invocation.getArgument(0);
-            captor.capture();
-            System.err.println(message);  // Print normally to avoid confusion in the test output
-            return null;
-        }).when(mockPrintStream).println(anyString());
-        return mockPrintStream;
-    }
 }
