@@ -1,0 +1,15 @@
+sensors:
+  temperature:
+    udp_port: 4444
+    threshold: 35
+  humidity:
+    udp_port: 4455
+    threshold: 50
+
+active_mq:
+  port: 61616
+  queue: monitoring
+
+#central_service:
+#  by: mq
+#  tcp_port: 3333

@@ -32,14 +32,6 @@ public final class BrokerMessageService{
             factory.setConnectionTTL(100000);
             connection = factory.createConnection();
             connection.start();
-            // Create a session
-//            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            // Create a queue
-//            Queue queue = session.createQueue((String) configMap.get("active_mq.queue"));
-            // Create a producer
-//            producer = session.createProducer(queue);
-            // Create a consumer
-//            consumer = session.createConsumer(queue);
         }
         return service;
     }
@@ -55,13 +47,6 @@ public final class BrokerMessageService{
         factory.close();
         service = null;
     }
-
-//    public static void main(String[] args) throws JMSException, InterruptedException {
-//        BrokerMessageService messageService = BrokerMessageService.getService("dev");
-//        messageService.put("Hi");
-//        Thread.sleep(1000);
-//        System.out.println(messageService.get());
-//    }
 
     /**
      * Send the message to message broker
@@ -93,7 +78,6 @@ public final class BrokerMessageService{
         // Access a queue
         Queue queue = session.createQueue((String) configMap.get("active_mq.queue"));
         // Create a consumer
-
         MessageConsumer consumer = session.createConsumer(queue);
         TextMessage message = (TextMessage) consumer.receiveNoWait();
         consumer.close();
@@ -102,7 +86,6 @@ public final class BrokerMessageService{
             return message.getText();
         else
             return "";
-//        return ((TextMessage)consumer.receive()).getText();
     }
 
     /**
@@ -133,13 +116,12 @@ public final class BrokerMessageService{
                     }
                 }catch (Exception e){
                     System.err.println(e.getMessage());
-                    e.printStackTrace();
                 }
             }
         });
 
         // Keep the program running to listen for messages
-        System.out.println("Listening the coming message...");
+        System.out.println("Listening the incoming message...");
         while(true) {
             try {
                 Thread.sleep(1000); // Keep the program running

@@ -25,7 +25,6 @@ public class CentralMonitoringService implements Service, MessageHandler  {
         try {
             service.startService();
         } catch (Throwable e) {
-            e.printStackTrace();
             System.err.println(e.fillInStackTrace().toString());
             System.err.println("System Error. Closing Central Monitoring Service");
             service.stopService();
