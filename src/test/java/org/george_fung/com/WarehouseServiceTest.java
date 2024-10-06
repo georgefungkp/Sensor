@@ -4,7 +4,6 @@ import org.george_fung.com.util.message_broker_service.BrokerMessageService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import javax.jms.JMSException;
 import java.io.ByteArrayOutputStream;
