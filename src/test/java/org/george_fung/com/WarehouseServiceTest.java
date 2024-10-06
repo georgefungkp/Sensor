@@ -26,15 +26,12 @@ public class WarehouseServiceTest {
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
     private final ByteArrayOutputStream errStreamCaptor = new ByteArrayOutputStream();
 
-    private BrokerMessageService mockBrokerService;
-
     //    @InjectMocks
     private WarehouseService warehouseService;
 
     @BeforeEach
     public void setup() throws JMSException {
         warehouseService = new WarehouseService("test", "Warehouse One");
-        mockBrokerService = Mockito.mock(BrokerMessageService.class);
         System.setOut(new PrintStream(outputStreamCaptor));
         System.setErr(new PrintStream(errStreamCaptor));
     }
@@ -42,7 +39,6 @@ public class WarehouseServiceTest {
     @AfterEach
     public void tearDown() {
         warehouseService = null;
-        mockBrokerService = null;
         System.setOut(standardOut); // Revert back to the standard output stream
         System.setErr((standardErr)); // Revert back to the standard error stream
     }
@@ -62,6 +58,8 @@ public class WarehouseServiceTest {
 
     @Test
     public void testListenForSensorData() throws InterruptedException, JMSException, IllegalAccessException, NoSuchFieldException, IOException {
+        WarehouseService warehouseService = new WarehouseService("test", "Warehouse One");
+        BrokerMessageService mockBrokerService = mock(BrokerMessageService.class);
         int port = 5555;
         String testMessage = "sensor=h1; value=50";
         Field field = WarehouseService.class.getDeclaredField("service");
@@ -99,7 +97,7 @@ public class WarehouseServiceTest {
     void testMainMethod() {
         // Test the main method to ensure it doesn't throw any exceptions
         assertDoesNotThrow(() -> {
-            String[] args = {"test"};
+            String[] args = {"test", "1"};
             WarehouseService.main(args);
         });
     }

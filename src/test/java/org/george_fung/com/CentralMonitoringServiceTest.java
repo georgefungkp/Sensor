@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import javax.jms.JMSException;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
@@ -116,10 +115,9 @@ class CentralMonitoringServiceTest {
         CentralMonitoringService service = Mockito.mock(CentralMonitoringService.class);
         doCallRealMethod().when(service).processMessage(testMessage);
 
-        service.processMessage(testMessage);
-
         // Verify the format error message is printed
-        assertTrue(errStreamCaptor.toString().trim().contains("The format of reading abc is not correct"));
+        assertThrows(IllegalArgumentException.class, ()-> service.processMessage(testMessage), "The format of reading is not correct");
+
     }
 
 

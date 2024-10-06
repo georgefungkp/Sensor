@@ -18,6 +18,7 @@ public class WarehouseService implements Service {
     private final Map<String, Object> configMap;
     String name;
     BrokerMessageService service;
+    private boolean listening = true;
 
     public WarehouseService(String env, String name) throws JMSException {
         this.configMap = Misc.getSettings(env);
@@ -32,11 +33,9 @@ public class WarehouseService implements Service {
      * @throws SocketException
      */
     void listenForSensorData(int port) throws IOException {
-        DatagramSocket socket = new DatagramSocket(port);
-
-        try (socket) {
+        try (DatagramSocket socket = new DatagramSocket(port)) {
             byte[] buffer = new byte[256];
-            do {
+            while(listening){
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String received = new String(packet.getData(), 0, packet.getLength());
@@ -44,7 +43,7 @@ public class WarehouseService implements Service {
                 System.out.println("Received: " + received);
 
                 this.sendToCentralMonitoringService(received);
-            } while (true);
+            }
         } catch (SocketException _) {
             System.err.println("Central Monitoring Service is stopped unexpected");
             this.stopService();
@@ -70,6 +69,7 @@ public class WarehouseService implements Service {
      */
     @Override
     public void stopService() {
+        listening = false;
         System.out.println("Warehouse Service is closed");
     }
 

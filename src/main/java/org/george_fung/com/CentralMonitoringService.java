@@ -6,20 +6,27 @@ import org.george_fung.com.util.message_broker_service.BrokerMessageService;
 
 import javax.jms.JMSException;
 import java.util.Map;
+import java.util.Optional;
 
 public class CentralMonitoringService implements Service, MessageHandler  {
     private final Map<String, Object> configMap;
-    private BrokerMessageService service;
+    private final BrokerMessageService service;
     private final int temperatureThreshold;
     private final int humidityThreshold;
 
     public CentralMonitoringService(String env) throws JMSException {
         this.configMap = Misc.getSettings(env);
-        this.temperatureThreshold = (Integer) configMap.get("sensors.temperature.threshold");
-        this.humidityThreshold = (Integer) configMap.get("sensors.humidity.threshold");
+        this.temperatureThreshold = retrieveThreshold("sensors.temperature.threshold");
+        this.humidityThreshold = retrieveThreshold("sensors.humidity.threshold");
         this.service = BrokerMessageService.getService(env);
     }
 
+    private int retrieveThreshold(String thresholdName) {
+        return (Integer) Optional
+                .ofNullable(configMap.get(thresholdName))
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Threshold \"" + thresholdName + "\" not configured."));
+    }
     public static void main(String[] args) throws JMSException {
         CentralMonitoringService service = new CentralMonitoringService(args[0]);
         try {
@@ -54,7 +61,6 @@ public class CentralMonitoringService implements Service, MessageHandler  {
             sensorType = SensorType.getSensorTypeByShortName(sensorName.substring(0, 1));
         } catch (SensorType.SensorTypeNotFoundException ex) {
             System.err.println(ex.getMessage());
-            ex.getMessage();
             return;
         }
         if (sensorType == SensorType.TEMPERATURE) {
@@ -63,22 +69,20 @@ public class CentralMonitoringService implements Service, MessageHandler  {
             threshold = this.humidityThreshold;
         }
 
-
-        int value;
-        String valuePart = parts[1].split("=")[1];
-        try {
-            value = Integer.parseInt(valuePart);
-        } catch (NumberFormatException nfe) {
-            System.err.printf("The format of reading %s is not correct%n", valuePart);
-            return;
-        }
-
+        int value = parseInt(parts[1]);
         if (value > threshold) {
             String errMsg = String.format("ALARM: %s Sensor - %s threshold exceeded! Value: %d", sensorType, sensorName, value);
             System.err.println(errMsg);
         }
     }
 
+    private int parseInt(String part) {
+        try {
+            return Integer.parseInt(part.split("=")[1]);
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("The format of reading is not correct", nfe);
+        }
+    }
     @Override
     public void startService() throws Exception {
         System.out.printf("Central Monitoring Services is running and checking message from message broker... %n");
