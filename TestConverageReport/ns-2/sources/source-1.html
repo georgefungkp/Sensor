@@ -1,0 +1,191 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=windows-1252"> 
+  <title>Coverage Report > LoadYamlIntoMap</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">org.george_fung.com.util</a>
+</div>
+
+<h1>Coverage Summary for Class: LoadYamlIntoMap (org.george_fung.com.util)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">LoadYamlIntoMap</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65%
+  </span>
+  <span class="absValue">
+    (13/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.8%
+  </span>
+  <span class="absValue">
+    (24/29)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package org.george_fung.com.util;
+&nbsp;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.databind.ObjectMapper;
+&nbsp;import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+&nbsp;
+&nbsp;import java.io.File;
+&nbsp;import java.io.IOException;
+&nbsp;import java.net.URISyntaxException;
+&nbsp;import java.net.URL;
+&nbsp;import java.util.HashMap;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Map;
+&nbsp;
+<b class="fc">&nbsp;public class LoadYamlIntoMap {</b>
+&nbsp;
+<b class="fc">&nbsp;    static ObjectMapper mapper = new ObjectMapper(new YAMLFactory());</b>
+&nbsp;
+&nbsp;
+&nbsp;    static void flattenedYaml(Map&lt;String, Object&gt; inputMap, Map&lt;String, Object&gt; resultMap, String parentKey){
+&nbsp;        //recursion exit conditon
+<b class="pc">&nbsp;        if (inputMap == null || inputMap.isEmpty()){</b>
+&nbsp;           return;
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        inputMap.keySet().forEach( x -&gt; {</b>
+&nbsp;            String keyBeingProcessed;
+&nbsp;
+<b class="pc">&nbsp;            if(parentKey !=null &amp;&amp; resultMap.containsKey(parentKey)){</b>
+<b class="fc">&nbsp;                String currentKey = parentKey + &quot;.&quot; + x;</b>
+<b class="fc">&nbsp;                resultMap.put(currentKey, null);</b>
+<b class="fc">&nbsp;                keyBeingProcessed = currentKey;</b>
+&nbsp;            }
+&nbsp;            else {
+<b class="fc">&nbsp;                resultMap.put(x, null);</b>
+<b class="fc">&nbsp;                keyBeingProcessed = x;</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            Object o = inputMap.get(x);</b>
+<b class="fc">&nbsp;            resultMap.put(keyBeingProcessed,o);</b>
+&nbsp;
+<b class="fc">&nbsp;            if(o instanceof Map) {</b>
+<b class="fc">&nbsp;                flattenedYaml((Map)inputMap.get(x), resultMap, keyBeingProcessed);</b>
+<b class="fc">&nbsp;            } else if (o instanceof List list)  {</b>
+<b class="fc">&nbsp;                int counter = 0;</b>
+<b class="fc">&nbsp;                for (Object obj: list){</b>
+<b class="pc">&nbsp;                    if (obj instanceof  Map) {</b>
+<b class="fc">&nbsp;                        String currentKey = keyBeingProcessed + &quot;.[&quot; + counter + &quot;]&quot;;</b>
+<b class="fc">&nbsp;                        resultMap.put(currentKey, null);</b>
+<b class="fc">&nbsp;                        flattenedYaml((Map) obj, resultMap, currentKey);</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        });
+&nbsp;    }
+&nbsp;
+&nbsp;    public static Map&lt;String, Object&gt; getMap(File file) throws IOException {
+<b class="fc">&nbsp;        Map&lt;String, Object&gt; mapResult = new HashMap&lt;&gt;(20);</b>
+<b class="fc">&nbsp;        flattenedYaml(mapper.readValue(file, Map.class), mapResult, null);</b>
+<b class="fc">&nbsp;        return mapResult;</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    public static void main(String[] args) throws IOException, URISyntaxException {
+&nbsp;       // URL resource = new LoadYamlIntoMap().getClass().getResource(&quot;myapp.yaml&quot;);
+&nbsp;//        File file= new File(&quot;C:\\Users\\George\\IdeaProjects\\WareHouse\\src\\main\\resources\\dev_config.yaml&quot;);
+<b class="nc">&nbsp;        URL url  = LoadYamlIntoMap.class.getClassLoader().getResource(&quot;dev_config.yaml&quot;);</b>
+<b class="nc">&nbsp;        assert url != null;</b>
+<b class="nc">&nbsp;        File file = new File(url.toURI());</b>
+<b class="nc">&nbsp;        Map&lt;String, Object&gt; mapResult = LoadYamlIntoMap.getMap(file);</b>
+<b class="nc">&nbsp;        mapResult.forEach((k, v) -&gt; System.out.println(k + &quot;:&quot; + v));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;}
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2024-10-07 00:54</div>
+</div>
+</body>
+</html>
