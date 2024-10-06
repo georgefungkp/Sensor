@@ -60,7 +60,7 @@ public class WarehouseService implements Service {
 
     /**
      * Send the message to message broker
-     * @param message
+     * @param message message to be sent
      * @throws JMSException
      */
     private void sendToCentralMonitoringService(String message) throws JMSException {

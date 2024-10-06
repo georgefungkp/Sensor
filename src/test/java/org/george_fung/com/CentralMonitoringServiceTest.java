@@ -16,9 +16,6 @@ import static org.mockito.Mockito.*;
 
 class CentralMonitoringServiceTest {
 
-    private BrokerMessageService mockBrokerService;
-//    private Map<String, Object> configMap;
-
     private final PrintStream standardOut = System.out;
     private final PrintStream standardErr = System.err;
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();

@@ -2,11 +2,10 @@ package org.george_fung.com.util.message_broker_service;
 
 import org.george_fung.com.util.MessageHandler;
 import org.junit.jupiter.api.*;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import javax.jms.*;
+import javax.jms.JMSException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -39,7 +38,7 @@ public class BrokerMessageServiceTest {
 
     @Test
     public void testPutAndGetSyn() throws JMSException {
-          assertDoesNotThrow(() -> messageService.put("Hello, World!"), "Check if put does not throw an exception");
+        assertDoesNotThrow(() -> messageService.put("Hello, World!"), "Check if put does not throw an exception");
 
 //        messageService.put("Hello, World!");
         String message = messageService.get();
@@ -52,7 +51,7 @@ public class BrokerMessageServiceTest {
         assertDoesNotThrow(() -> {
             String message = messageService.get();
             assertEquals("", message);
-                    }, "Check if put does not throw an exception");
+        }, "Check if put does not throw an exception");
     }
 
     @Disabled
@@ -68,11 +67,11 @@ public class BrokerMessageServiceTest {
     }
 
 
-
     /**
      * Given that the run method in the Runnable interface requires no parameters and returns void,
      * any lambda expression of the form () -> { statements } conforms to the Runnable interface
      * because it also takes no parameters and returns void.
+     *
      * @throws Exception
      */
     @Test
@@ -84,7 +83,7 @@ public class BrokerMessageServiceTest {
         Thread t = new Thread(() -> {
             try {
                 messageService.getAsync(mockMessageHandler);
-            }catch (JMSException _){
+            } catch (JMSException _) {
             }
         });
         t.start();
