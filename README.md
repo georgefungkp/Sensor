@@ -2,7 +2,7 @@
 The system is to monitor environmental information from sensors. Now, it supports temperature and humidity sensors.
 The system supports multiple warehouses which receive information from sensors by UDP protocol.
 The test coverage is 75% <a href="https://github.com/georgefungkp/Sensor/blob/main/TestConverageReport/index.html"> Report is here.</a>
-
+JDK version: open-jdk 22 
 <h2>Apache Artemis</h2>
 The communication between Central Service and Warehouse Service is through ApacheMQ Artemis. You can find installation of <a href="https://activemq.apache.org/components/artemis/download/ApacheMQ"> ApacheMQ Artemis </a>
 Local development is triggered by  
